@@ -2,15 +2,22 @@
 #include <Arduino_LSM9DS1.h>
 //importation de la bibliothèque pour utiliser le DFPlayer
 #include "DFRobotDFPlayerMini.h"
+//importation de la bilbiothèque pour utiliser les néopixels
+#include <Adafruit_NeoPixel.h>
 
 //on définit les constantes pour plus de clareté
+//on définit les contsance associé aux néopixel
+#define PIXEL_PIN 6//numéro du pin
+#define PIXEL_NB 24//nombre de pixel
+Adafruit_NeoPixel pixels(PIXEL_NB, PIXEL_PIN, NEO_GRB + NEO_KHZ800);
+
 //les constantes suivantes correspond aux indices des valeur des composantes x,y et z des gyroscope/accéléromètre dans leur tableau respectif
 #define X 0
 #define Y 1
 #define Z 2
 
 //valeur seuil de détection d'un mouvement, plus on la réduit, plus la centrale inertielle détectera un mouvement plus rapidement et plus fréquemment
-#define DETECTION_SEUIL 3
+#define DETECTION_SEUIL 50
 //durée dans laquelle le dé ne doit pas bouger pour etre déclaré comme à l'arrêt définitif
 #define DETECTION_TEMPORISATION 1000 //en ms
 
@@ -22,7 +29,7 @@
 #define AUDIO_PISTE_2 2
 #define AUDIO_PISTE_3 4
 #define AUDIO_PISTE_4 5
-#define AUDIO_PISTE_5 6
+#define AUDIO_PISTE_5 7
 #define AUDIO_PISTE_6 1
 
 //variable qui stocke quand à était la dernière fois que l'on a joué un son
@@ -171,6 +178,8 @@ void detectionGenerationNombre(){
         //on affiche la nouvelle valeur du dé dans la console
         Serial.print("Nouvelle valeur du dé est ");
         Serial.println(valeurDuDe);
+        //on affiche la valeur du dé via les néopixels
+        affichageValeurNeopixel();
       }
     }
   }else{
@@ -179,9 +188,93 @@ void detectionGenerationNombre(){
     arreter = 0;
     //on retire la valeur du dé lorsqu'il est en mouvement
     valeurDuDe = 0;
+     //on affiche la valeur du dé via les néopixels
+    pixels.clear();
+    pixels.show();
   }
 }
 
+void affichageValeurNeopixel(){
+  //procédure qui permet d'afficher la valeur du dé généré par l'intermédiaire des néopixels
+  //on retire tout les pixels
+  pixels.clear();
+  if(valeurDuDe != 0){
+    int rouge = 0;
+    int vert = 0;
+    int bleu = 0;
+    
+    switch(valeurDuDe){
+      case 1:
+        rouge = 100;
+        vert = 0;
+        bleu = 0;
+        break;
+      case 2:
+        rouge = 100;
+        vert = 100;
+        bleu = 0;
+        break;
+      case 3:
+        rouge = 0;
+        vert = 100;
+        bleu = 0;
+        break;
+      case 4:
+        rouge = 0;
+        vert = 100;
+        bleu = 100;
+        break;
+      case 5:
+        rouge = 0;
+        vert = 0;
+        bleu = 100;
+        break;
+      case 6:
+        rouge = 100;
+        vert = 0;
+        bleu = 100;
+        break;
+    }
+
+    if(valeurDuDe != 1){
+      //pixel en haut à gauche
+      pixels.setPixelColor(16,pixels.Color(rouge, vert, bleu));
+      pixels.setPixelColor(17,pixels.Color(rouge, vert, bleu));
+    }
+    if(valeurDuDe != 1){
+      //pixel en bas à droite
+      pixels.setPixelColor(6,pixels.Color(rouge, vert, bleu));
+      pixels.setPixelColor(7,pixels.Color(rouge, vert, bleu));
+    }
+    if(valeurDuDe%2==1){
+      //si on doit afficher le pixel du centre dans le cas des chiffres impair
+      pixels.setPixelColor(11,pixels.Color(rouge, vert, bleu));
+      pixels.setPixelColor(12,pixels.Color(rouge, vert, bleu));
+    }
+
+    if(valeurDuDe >= 4 ){
+      //pixel en haut à droite
+      pixels.setPixelColor(22,pixels.Color(rouge, vert, bleu));
+      pixels.setPixelColor(23,pixels.Color(rouge, vert, bleu));
+    }
+    if(valeurDuDe >= 4 ){
+      //pixel en haut à droite
+      pixels.setPixelColor(0,pixels.Color(rouge, vert, bleu));
+      pixels.setPixelColor(1,pixels.Color(rouge, vert, bleu));
+    }
+
+    if(valeurDuDe == 6){
+      //pixel au milieu a gauche
+      pixels.setPixelColor(8,pixels.Color(rouge, vert, bleu));
+      pixels.setPixelColor(9,pixels.Color(rouge, vert, bleu));
+      //pixel au milieu a droite
+      pixels.setPixelColor(14,pixels.Color(rouge, vert, bleu));
+      pixels.setPixelColor(15,pixels.Color(rouge, vert, bleu));
+    }
+  }
+  pixels.show();
+  
+}
 
 void initialisationDFPlayer(){
   //on intiialise la deuxième liaison série pour le DFPlayer
@@ -273,6 +366,9 @@ void setup() {
   
   //on calibre le gyroscope & accéléromètre pour qu'ils donnent par la suite des valeur le plus proche possible de 0
   calibrerGyroscopeAccelerometre();
+
+  //initialisation des néopixel
+  pixels.begin();
 }
 
 void loop() {
